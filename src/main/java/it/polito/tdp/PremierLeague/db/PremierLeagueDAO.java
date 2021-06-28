@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import it.polito.tdp.PremierLeague.model.Action;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Player;
@@ -36,25 +38,25 @@ public class PremierLeagueDAO {
 		}
 	}
 	
-	public List<Team> listAllTeams(){
+	public void listAllTeams(Map<Integer, Team> idMap){
 		String sql = "SELECT * FROM Teams";
-		List<Team> result = new ArrayList<Team>();
+		
 		Connection conn = DBConnect.getConnection();
 
 		try {
 			PreparedStatement st = conn.prepareStatement(sql);
 			ResultSet res = st.executeQuery();
 			while (res.next()) {
-
-				Team team = new Team(res.getInt("TeamID"), res.getString("Name"));
-				result.add(team);
+				if(!idMap.containsKey(res.getInt("TeamID"))) {
+					Team team = new Team(res.getInt("TeamID"), res.getString("Name"));
+					idMap.put(res.getInt("TeamID"), team);
+				}
 			}
 			conn.close();
-			return result;
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
-			return null;
+			
 		}
 	}
 	
@@ -109,6 +111,68 @@ public class PremierLeagueDAO {
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return null;
+		}
+	}
+	
+	public void casa(Map<Team, Integer> classifica, Map<Integer, Team> idMap, Team t) {
+		String sql = "SELECT m.TeamHomeID, m.ResultOfTeamHome "
+				+ "FROM teams t, matches m "
+				+ "WHERE t.TeamID = m.TeamHomeID AND t.TeamID = ?";
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, t.getTeamID());
+			ResultSet res = st.executeQuery();
+			int punti = 0;
+			int ris = 0;
+			int id = 0;
+			while (res.next()) {
+				if(idMap.containsKey(res.getInt("m.TeamHomeID"))) {
+					ris = res.getInt("m.ResultOfTeamHome");
+					if(ris == 1)
+						punti += 3;
+					else if(ris == 0)
+						punti += 1;
+				}
+				id = res.getInt("m.TeamHomeID");
+			}
+			classifica.put(idMap.get(id), classifica.get(idMap.get(id)) + punti);
+			conn.close();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void trasferta(Map<Team, Integer> classifica, Map<Integer, Team> idMap, Team t) {
+		String sql = "SELECT m.TeamAwayID, m.ResultOfTeamHome "
+				+ "FROM teams t, matches m "
+				+ "WHERE t.TeamID = m.TeamAwayID AND t.TeamID = ?";
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, t.getTeamID());
+			ResultSet res = st.executeQuery();
+			int punti = 0;
+			int ris = 0;
+			int id = 0;
+			while (res.next()) {
+				if(idMap.containsKey(res.getInt("m.TeamAwayID"))) {
+					ris = res.getInt("m.ResultOfTeamHome");
+					if(ris == -1)
+						punti += 3;
+					else if(ris == 0)
+						punti += 1;
+				}
+				id = res.getInt("m.TeamAwayID");
+			}
+			classifica.put(idMap.get(id), classifica.get(idMap.get(id)) + punti);
+			conn.close();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 	

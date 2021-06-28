@@ -5,9 +5,12 @@
 package it.polito.tdp.PremierLeague;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import it.polito.tdp.PremierLeague.model.Model;
+import it.polito.tdp.PremierLeague.model.Team;
+import it.polito.tdp.PremierLeague.model.TeamDiff;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -18,6 +21,7 @@ import javafx.scene.control.TextField;
 public class FXMLController {
 	
 	private Model model;
+	private boolean creato = false;
 
     @FXML // ResourceBundle that was given to the FXMLLoader
     private ResourceBundle resources;
@@ -35,7 +39,7 @@ public class FXMLController {
     private Button btnSimula; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbSquadra"
-    private ComboBox<?> cmbSquadra; // Value injected by FXMLLoader
+    private ComboBox<Team> cmbSquadra; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtN"
     private TextField txtN; // Value injected by FXMLLoader
@@ -48,12 +52,36 @@ public class FXMLController {
 
     @FXML
     void doClassifica(ActionEvent event) {
-
+    	if(!creato) {
+    		txtResult.setText("Creare prima il grafo");
+    		return;
+    	}
+    	Team t = cmbSquadra.getValue();
+    	if(t==null) {
+    		txtResult.setText("Selezionare una squadra dalla tendina");
+    		return;
+    	}
+    	List<TeamDiff> migliori = model.getMigliori(t);
+    	List<TeamDiff> peggiori = model.getPeggiori(t);
+    	txtResult.setText("SQUADRE MIGLIORI:\n");
+    	for(TeamDiff d : migliori) {
+    		txtResult.appendText(d+"\n");
+    	}
+    	txtResult.appendText("\nSQUADRE PEGGIORI:\n");
+    	for(TeamDiff d : peggiori) {
+    		txtResult.appendText(d+"\n");
+    	}
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
-
+    	if(creato) {
+    		cmbSquadra.getItems().removeAll(model.getVertici());
+    	}
+    	model.creaGrafo();
+    	creato = true;
+    	txtResult.setText("Grafo creato!\n#vertici: "+model.getVertici().size()+"\n#archi: "+model.getArchi().size());
+    	cmbSquadra.getItems().addAll(model.getVertici());
     }
 
     @FXML
